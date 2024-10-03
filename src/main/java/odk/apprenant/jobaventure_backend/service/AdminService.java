@@ -14,15 +14,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class AdminService {
 
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
     @Autowired
 
     private AdminRepository adminRepository;
@@ -32,9 +37,11 @@ public class AdminService {
     private RoleRepository roleRepository;
     @Autowired  // Assurez-vous que l'annotation @Autowired est présente
     private UserRespository userRespository;
+    @Autowired
+    private FileStorageService fileStorageService;
 
 
-    public AdminService(BCryptPasswordEncoder passwordEncoder) {
+    public AdminService(PasswordEncoder passwordEncoder) {
         this.passwordEncoder = passwordEncoder;
     }
     // Méthode pour obtenir l'administrateur connecté
@@ -55,6 +62,35 @@ public class AdminService {
         getCurrentAdmin();
         roleRepository.save(role);
         return "Role ajouté avec succès!";
+    }
+    public Admin updateAdmin(Admin updatedAdmin, MultipartFile image) throws IOException {
+        // Récupérer l'utilisateur connecté
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Optional<Admin> adminOptional = adminRepository.findByEmail(email);
+
+        if (adminOptional.isPresent()) {
+            Admin admin = adminOptional.get();
+            admin.setNom(updatedAdmin.getNom());
+            admin.setEmail(updatedAdmin.getEmail());
+
+            // Ne pas modifier le mot de passe si celui-ci n'est pas changé
+            if (updatedAdmin.getPassword() != null && !updatedAdmin.getPassword().isEmpty()) {
+                admin.setPassword(passwordEncoder.encode(updatedAdmin.getPassword()));
+            }
+
+            // Gestion de l'image
+            if (image != null && !image.isEmpty()) {
+                // Supprimer l'ancienne image si elle existe
+                if (admin.getImageUrl() != null) {
+                    Files.deleteIfExists(Paths.get(admin.getImageUrl()));
+                }
+                String imageUrl = fileStorageService.sauvegarderImage(image);
+                admin.setImageUrl(imageUrl);
+            }
+
+            return adminRepository.save(admin); // Mise à jour réussie
+        }
+        return null; // Utilisateur non trouvé
     }
 
     public String modifierRoleType(Long id, Role roleTypeDetails) {
@@ -99,20 +135,25 @@ public class AdminService {
         adminRepository.deleteById(id);
     }
     public void addProfessionnelToAdmin(Professionnel professionnel) {
-        Admin admin = getCurrentAdmin(); // Get the currently authenticated admin
-        professionnel.setAdmin(admin);
+        Admin admin = getCurrentAdmin(); // Récupérer l'admin actuellement authentifié
+        professionnel.setAdmin(admin); // Associer l'admin au professionnel
 
-        // Assume 'professionnel' contains the role information
-        if (professionnel.getRole() != null) {
-            // Validate role existence
-            Role role = roleRepository.findById(professionnel.getRole().getId())
-                    .orElseThrow(() -> new RuntimeException("Role non trouvé."));
-            professionnel.setRole(role); // Set the role for the professionnel
-            professionnel.setPassword(passwordEncoder.encode(professionnel.getPassword()));
-        } else {
-            throw new RuntimeException("Aucun rôle spécifié.");
-        }
+        // Vérifier si le rôle 'PROFESSIONNEL' existe déjà
+        Role roleProfessionnel = roleRepository.findByNom("PROFESSIONNEL")
+                .orElseGet(() -> {
+                    // Si le rôle n'existe pas, le créer
+                    Role newRole = new Role();
+                    newRole.setNom("PROFESSIONNEL");
+                    return roleRepository.save(newRole); // Enregistrer le nouveau rôle
+                });
 
+        // Assigner le rôle au professionnel
+        professionnel.setRole(roleProfessionnel);
+
+        // Encoder le mot de passe du professionnel
+        professionnel.setPassword(passwordEncoder.encode(professionnel.getPassword()));
+
+        // Enregistrer le professionnel dans la base de données
         professionnelRepositoty.save(professionnel);
     }
 

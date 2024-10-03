@@ -1,92 +1,117 @@
 package odk.apprenant.jobaventure_backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import odk.apprenant.jobaventure_backend.model.Categorie;
+import odk.apprenant.jobaventure_backend.dtos.CategorieDto;
+
+import odk.apprenant.jobaventure_backend.dtos.ErrorResponse;
+import odk.apprenant.jobaventure_backend.dtos.MetierDto;
 import odk.apprenant.jobaventure_backend.model.Metier;
 import odk.apprenant.jobaventure_backend.service.CategorieService;
 import odk.apprenant.jobaventure_backend.service.MetierService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/metiers")
+
 public class MetierController {
 
     @Autowired
     private MetierService metierService;
     @Autowired
     private CategorieService categorieService;
-
-    @PostMapping( "/ajout")
-    public ResponseEntity<Metier> creerMetier(MultipartHttpServletRequest request) {
+    @PostMapping("/ajout")
+    public ResponseEntity<?> creerMetier(MultipartHttpServletRequest request) {
         try {
-            // Extraire les autres paramètres
+            // Extraire les paramètres
             String nom = request.getParameter("nom");
             String description = request.getParameter("description");
             String categorieIdStr = request.getParameter("categorieId");
 
-            // Conversion de l'ID de catégorie et récupération de la catégorie
-            Long categorieId = Long.parseLong(categorieIdStr);
-            Optional<Categorie> categorieOpt = categorieService.getCategorieById(categorieId);
-
-            if (!categorieOpt.isPresent()) {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);  // Catégorie non trouvée
+            // Vérification des valeurs nulles
+            if (nom == null || nom.isEmpty()) {
+                return ResponseEntity.badRequest().body("Le nom est requis.");
+            }
+            if (description == null || description.isEmpty()) {
+                return ResponseEntity.badRequest().body("La description est requise.");
+            }
+            if (categorieIdStr == null || categorieIdStr.isEmpty()) {
+                return ResponseEntity.badRequest().body("L'ID de catégorie est requis.");
             }
 
-            // Créer une nouvelle instance de Metier
-            Metier nouveauMetier = new Metier();
-            nouveauMetier.setNom(nom);
-            nouveauMetier.setDescription(description);
-            nouveauMetier.setCategorie(categorieOpt.get());
+            // Conversion de l'ID de catégorie et récupération de la catégorie
+            Long categorieId;
+            try {
+                categorieId = Long.parseLong(categorieIdStr);
+            } catch (NumberFormatException e) {
+                return ResponseEntity.badRequest().body("Mauvais format d'ID de catégorie.");
+            }
+
+            Optional<CategorieDto> categorieOpt = categorieService.getCategorieById(categorieId);
+            if (!categorieOpt.isPresent()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Catégorie non trouvée.");
+            }
+
+            // Créer une nouvelle instance de MetierDto
+            MetierDto nouveauMetierDto = new MetierDto();
+            nouveauMetierDto.setNom(nom);
+            nouveauMetierDto.setDescription(description);
+            nouveauMetierDto.setCategorie(categorieOpt.get()); // Assurez-vous que ça ne retourne pas null
 
             // Extraire le fichier image si présent
             MultipartFile image = request.getFile("image");
+            //if (image != null) {
+               // String imageUrl = "http://localhost:8080/uploads/images/" +  savedMetier.getImageUrl();
+                //nouveauMetierDto.setImageUrl(imageUrl);
+            //}
 
             // Ajouter le métier via le service
-            Metier metierAjoute = metierService.creerMetier(nouveauMetier, image);
-
-            return new ResponseEntity<>(metierAjoute, HttpStatus.CREATED);
+            MetierDto metierAjoute = metierService.creerMetier(nouveauMetierDto, image);
+            return ResponseEntity.status(HttpStatus.CREATED).body(metierAjoute);
         } catch (IOException e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur interne du serveur.");
         }
     }
 
 
     @PutMapping(value = "/{id}", consumes = "multipart/form-data")
-    public ResponseEntity<Metier> modifierMetier(
+    public ResponseEntity<MetierDto> modifierMetier(
             @PathVariable Long id,
             @RequestPart(value = "metier") String detailsMetierJson,
             @RequestPart(value = "image", required = false) MultipartFile image) {
         try {
-            // Convertir le JSON en objet Metier
-            Metier detailsMetier = new ObjectMapper().readValue(detailsMetierJson, Metier.class);
-            Metier metierMisAJour = metierService.modifierMetier(id, detailsMetier, image);
+            // Convertir le JSON en objet MetierDto
+            MetierDto detailsMetier = new ObjectMapper().readValue(detailsMetierJson, MetierDto.class);
+            MetierDto metierMisAJour = metierService.modifierMetier(id, detailsMetier, image);
             return ResponseEntity.ok(metierMisAJour);
         } catch (IOException e) {
-            return ResponseEntity.status(500).body(null); // Erreur de sauvegarde d'image
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null); // Erreur de sauvegarde d'image
         }
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Metier> getMetier(@PathVariable Long id) {
-        Metier metier = metierService.getMetier(id);
-        return ResponseEntity.ok(metier);
-    }
 
+
+
+    // Supprimer une catégorie
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimerMetier(@PathVariable Long id) {
-        try {
-            metierService.supprimerMetier(id);
-            return ResponseEntity.noContent().build();
-        } catch (IOException e) {
-            return ResponseEntity.status(500).build(); // Erreur de suppression d'image
-        }
+    public ResponseEntity<Void> deleteMerier(@PathVariable Long id) {
+        metierService.deleteMetier(id);
+        return ResponseEntity.noContent().build(); // Retourne 204 No Content
     }
+
 }

@@ -7,9 +7,13 @@ import odk.apprenant.jobaventure_backend.model.Professionnel;
 import odk.apprenant.jobaventure_backend.model.Role;
 import odk.apprenant.jobaventure_backend.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -55,6 +59,22 @@ public class AdminController {
             return ResponseEntity.ok("Professionnel ajouté avec succès!");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/update")
+    public ResponseEntity<Admin> updateAdmin(
+            @RequestPart Admin updatedAdmin,
+            @RequestPart(required = false) MultipartFile image) {
+        try {
+            Admin admin = adminService.updateAdmin(updatedAdmin, image);
+            if (admin != null) {
+                return ResponseEntity.ok(admin); // Retourne l'admin mis à jour
+            }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Retourne 404 si l'admin n'est pas trouvé
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null); // Retourne 500 en cas d'erreur de gestion de fichier
         }
     }
 

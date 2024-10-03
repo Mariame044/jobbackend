@@ -31,6 +31,9 @@ public interface VideoService {
 
     // Méthode pour supprimer une vidéo
     void supprimerVideo(Long id);
+
+    // Méthode pour regarder une vidéo
+    Video regarderVideo(Long id);
 }
 
 // Implémentation du service VideoService
@@ -55,7 +58,7 @@ class VideoServiceImpl implements VideoService {
     public Video ajouterVideo(Video video, MultipartFile fichier) throws IOException {
 
         if (video.getMetier() == null) {
-            throw new RuntimeException("La catégorie est obligatoire.");
+            throw new RuntimeException("La METIER est obligatoire.");
         }
         // Sauvegarde le fichier vidéo
         String cheminVideo = fileStorageService.sauvegarderVideo(fichier);
@@ -89,6 +92,24 @@ class VideoServiceImpl implements VideoService {
             return null;
         }
     }
+    @Override
+    public Video regarderVideo(Long id) {
+        Optional<Video> videoOptional = videoRepository.findById(id);
+        if (videoOptional.isPresent()) {
+            Video video = videoOptional.get();
+
+            // Incrémentez le nombre de vues
+            video.setNombreDeVues(video.getNombreDeVues() + 1);
+
+            // Enregistrez les modifications
+            videoRepository.save(video);
+
+            return video; // Retourne la vidéo pour visionnage
+        } else {
+            throw new RuntimeException("Vidéo non trouvée avec l'ID : " + id);
+        }
+    }
+
 
     @Override
     public void supprimerVideo(Long id) {

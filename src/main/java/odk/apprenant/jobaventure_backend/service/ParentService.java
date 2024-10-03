@@ -1,10 +1,15 @@
 package odk.apprenant.jobaventure_backend.service;
 
+import odk.apprenant.jobaventure_backend.model.Admin;
+import odk.apprenant.jobaventure_backend.model.Enfant;
 import odk.apprenant.jobaventure_backend.model.Parent;
 import odk.apprenant.jobaventure_backend.model.Role;
+import odk.apprenant.jobaventure_backend.repository.EnfanrRepository;
 import odk.apprenant.jobaventure_backend.repository.ParentRepository;
 import odk.apprenant.jobaventure_backend.repository.RoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -16,18 +21,38 @@ public class ParentService {
     @Autowired
     private ParentRepository parentRepository;
     @Autowired
+    private EnfanrRepository enfanrRepository;
+    @Autowired
     private RoleRepository roleRepository;
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
+    private Parent getCurrentParent() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName(); // Supposons que l'email est utilisé comme principal
+        return parentRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Administrateur non trouvé"));
+    }
+
     // Méthode pour créer un parent
     public Parent registerParent(Parent parent) {
-        // Rechercher le rôle 'PARENT'
+        // Vérifier si le rôle 'ENFANT' existe déjà
         Role roleParent = roleRepository.findByNom("Parent")
-                .orElseThrow(() -> new RuntimeException("Rôle 'PARENT' non trouvé."));
-        parent.setRole(roleParent); // Assigner le rôle
-        parent.setPassword(passwordEncoder.encode(parent.getPassword())); // Encoder le mot de passe
-        return parentRepository.save(parent);
+                .orElseGet(() -> {
+                    // Si le rôle n'existe pas, le créer
+                    Role newRole = new Role();
+                    newRole.setNom("Parent");
+                    return roleRepository.save(newRole); // Enregistrer le nouveau rôle
+                });
+
+        // Assigner le rôle à l'enfant
+        parent.setRole(roleParent);
+
+        // Encoder le mot de passe de l'enfant
+        parent.setPassword(passwordEncoder.encode(parent.getPassword()));
+
+        // Enregistrer l'enfant dans la base de données
+        return parentRepository.save(parent); // Correction de 'enfanrRepository' à 'enfantRepository'
     }
 
     // Méthode pour récupérer tous les parents
@@ -55,6 +80,40 @@ public class ParentService {
     // Méthode pour supprimer un parent
     public void supprimerParent(Long id) {
         parentRepository.deleteById(id);
+    }
+    // Méthode pour assigner un enfant à un parent (Superviser)
+    public Parent superviseEnfant(Long parentId, Long enfantId) {
+        // Vérifier le parent actuellement authentifié
+        Parent currentParent = getCurrentParent();
+
+        // Vérifier si le parent et l'enfant existent
+        Optional<Parent> parent = parentRepository.findById(parentId);
+        Optional<Enfant> enfant = enfanrRepository.findById(enfantId);
+
+        if (parent.isPresent() && enfant.isPresent()) {
+            Enfant enfantExistant = enfant.get();
+            enfantExistant.setParent(parent.get()); // Assigner le parent à l'enfant
+            enfanrRepository.save(enfantExistant); // Sauvegarder l'enfant avec le parent assigné
+
+            return parent.get();
+        } else {
+            throw new RuntimeException("Parent ou Enfant non trouvé");
+        }
+    }
+
+    // Méthode pour récupérer tous les enfants supervisés par un parent
+    public List<Enfant> getEnfantsByParent(Long parentId) {
+        // Vérifier le parent actuellement authentifié
+        Parent currentParent = getCurrentParent();
+
+        // Récupérer le parent par son ID
+        Optional<Parent> parent = parentRepository.findById(parentId);
+
+        if (parent.isPresent()) {
+            return parent.get().getEnfant(); // Retourner la liste des enfants supervisés
+        } else {
+            throw new RuntimeException("Parent non trouvé");
+        }
     }
 }
 

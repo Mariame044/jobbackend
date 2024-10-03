@@ -23,7 +23,8 @@ public class Video {
 
     @ManyToMany(mappedBy = "video")
     private List<Enfant> enfant = new ArrayList<>();
-
+    // Nouveau champ pour le nombre de vues
+    private int nombreDeVues = 0; // Valeur par défaut à 0
 
     @ManyToOne
     @JoinColumn(name = "metier_id")

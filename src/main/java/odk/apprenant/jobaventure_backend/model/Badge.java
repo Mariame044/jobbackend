@@ -17,6 +17,8 @@ public class Badge {
     private String nom;
     private String description;
 
+    @OneToMany(mappedBy = "badge")
+    private List<Quiz> quizzes;  // Un badge est lié à plusieurs quiz
 
     @ManyToOne
     @JoinColumn(name = "admin_id")

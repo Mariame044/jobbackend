@@ -13,18 +13,16 @@ public class Interview {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    private String description;
     private String date;
-    private String questions;
-
+    private String url;
+    private String duree;
     @ManyToMany(mappedBy = "interview")
     private List<Enfant> enfant = new ArrayList<>();
-
     @ManyToOne
-    @JoinColumn(name = "professionnel_id")
-    private Professionnel professionnel; // Interview associée à un professionnel
-
-
+    @JoinColumn(name = "admin_id")
+    private Admin admin; // L'admin qui a ajouté la vidéo
+    private int nombreDeVues = 0; // Valeur par défaut à 0
     @ManyToOne
     @JoinColumn(name = "metier_id")
     private Metier metier;// Interview associée à un professionnel

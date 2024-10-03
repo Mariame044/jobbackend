@@ -1,6 +1,7 @@
 package odk.apprenant.jobaventure_backend.controller;
 
 
+import odk.apprenant.jobaventure_backend.dtos.MetierDto;
 import odk.apprenant.jobaventure_backend.model.Categorie;
 import odk.apprenant.jobaventure_backend.model.Metier;
 import odk.apprenant.jobaventure_backend.model.Video;
@@ -9,6 +10,7 @@ import odk.apprenant.jobaventure_backend.service.VideoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -19,6 +21,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/videos")
+@PreAuthorize("hasRole('ADMIN')")
 public class VideoController {
 
     @Autowired
@@ -41,15 +44,18 @@ public class VideoController {
             String metierIdStr = request.getParameter("metierId");
 
             // Conversion de l'ID de métier et récupération du métier
+            // Conversion de l'ID de métier et récupération du métier
             Long metierId = Long.parseLong(metierIdStr);
-            Metier metier = metierService.getMetier(metierId); // Appel à la méthode modifiée
+            MetierDto metierDto = metierService.getMetier(metierId); // Utilisation de MetierDto
 
 
             // Créer une nouvelle instance de Video
             Video nouvelleVideo = new Video();
             nouvelleVideo.setDuree(duree);
             nouvelleVideo.setDescription(description);
-            nouvelleVideo.setMetier(metier); // Lier le métier à la vidéo
+            //nouvelleVideo.setMetier(metierDto); // Lier le métier à la vidéo
+            nouvelleVideo.setMetier(convertToEntity(metierDto)); // Convertir MetierDto en Metier
+
             // Ajouter la vidéo via le service
             Video videoAjoutee = videoService.ajouterVideo(nouvelleVideo, fichier);
 
@@ -64,7 +70,15 @@ public class VideoController {
     }
 
 
-
+    // Méthode pour convertir MetierDto en Metier
+    private Metier convertToEntity(MetierDto metierDto) {
+        Metier metier = new Metier();
+        metier.setId(metierDto.getId());
+        metier.setNom(metierDto.getNom());
+        metier.setDescription(metierDto.getDescription());
+        // Assurez-vous d'ajouter d'autres attributs de Metier si nécessaire
+        return metier;
+    }
 
     // Récupérer toutes les vidéos
     @GetMapping
@@ -100,5 +114,10 @@ public class VideoController {
     public ResponseEntity<Void> supprimerVideo(@PathVariable Long id) {
         videoService.supprimerVideo(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+    // Endpoint pour regarder une vidéo
+    @GetMapping("/regarder/{id}")
+    public Video regarderVideo(@PathVariable Long id) {
+        return videoService.regarderVideo(id);
     }
 }
