@@ -2,20 +2,26 @@ package odk.apprenant.jobaventure_backend.controller;
 
 
 import odk.apprenant.jobaventure_backend.config.JwtUtile;
+import odk.apprenant.jobaventure_backend.dtos.RegisterUserDto;
 import odk.apprenant.jobaventure_backend.dtos.ReqRep;
 import odk.apprenant.jobaventure_backend.model.Metier;
 import odk.apprenant.jobaventure_backend.model.User;
 import odk.apprenant.jobaventure_backend.repository.MetierRepository;
 import odk.apprenant.jobaventure_backend.repository.UserRespository;
+import odk.apprenant.jobaventure_backend.service.AuthenticationService;
 import odk.apprenant.jobaventure_backend.service.MetierService;
+import odk.apprenant.jobaventure_backend.service.UseService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException; // Import correct
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +38,12 @@ public class AuthenticationController {
     @Autowired
     private JwtUtile jwtUtile;
     @Autowired
+    private UseService useService;
+    @Autowired
     private MetierService metierService;
+    @Autowired
+    private AuthenticationService authenticationService;
+
 
     @PostMapping("/login")
     public ReqRep login(@RequestBody ReqRep loginRequest) {
@@ -66,5 +77,16 @@ public class AuthenticationController {
         }
         return response;
     }
-    
+    // Endpoint pour l'inscription
+    @PostMapping("/signup")
+    public ResponseEntity<User> signup(@RequestBody RegisterUserDto input) {
+        try {
+            User newUser = authenticationService.signup(input); // Appeler la méthode signup du service
+            return ResponseEntity.status(HttpStatus.CREATED).body(newUser); // Retourner l'utilisateur créé
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); // Retourner une erreur si quelque chose échoue
+        }
+    }
+    // Endpoint pour mettre à jour le profil d'un utilisateur
+
 }

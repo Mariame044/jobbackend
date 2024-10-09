@@ -1,6 +1,7 @@
 package odk.apprenant.jobaventure_backend.service;
 
 
+import jakarta.transaction.Transactional;
 import odk.apprenant.jobaventure_backend.dtos.CategorieDto;
 import odk.apprenant.jobaventure_backend.dtos.MetierDto;
 import odk.apprenant.jobaventure_backend.exeption.MetierNotFoundException;
@@ -54,9 +55,10 @@ public class MetierService {
     
 
     // Créer un métier
-    // Create a métier
+    // Créer un métier avec une image
+    @Transactional
     public MetierDto creerMetier(MetierDto metierDto, MultipartFile image) throws IOException {
-        Admin currentAdmin = getCurrentAdmin(); // Get the connected admin
+        Admin currentAdmin = getCurrentAdmin(); // Obtenir l'administrateur connecté
         if (metierDto.getCategorie() == null) {
             throw new RuntimeException("La catégorie est obligatoire.");
         }
@@ -64,19 +66,17 @@ public class MetierService {
         Metier metier = new Metier();
         metier.setNom(metierDto.getNom());
         metier.setDescription(metierDto.getDescription());
-        metier.setAdmin(currentAdmin); // Set the connected admin
+        metier.setAdmin(currentAdmin); // Assigner l'administrateur connecté
 
-        // Image management
+        // Gestion de l'image
         if (image != null && !image.isEmpty()) {
             String imageUrl = fileStorageService.sauvegarderImage(image);
             metier.setImageUrl(imageUrl);
         }
 
-        // Retrieve category from DTO
+        // Récupérer la catégorie à partir du DTO
         Optional<CategorieDto> categorieDtoOpt = categorieService.getCategorieById(metierDto.getCategorie().getId());
-        if (categorieDtoOpt.isPresent()) {
-            metier.setCategorie(categorieService.convertToEntity(categorieDtoOpt.get()));
-        }
+        categorieDtoOpt.ifPresent(categorieDto -> metier.setCategorie(categorieService.convertToEntity(categorieDto)));
 
         Metier savedMetier = metierRepository.save(metier);
         return convertToDto(savedMetier);

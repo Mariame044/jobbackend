@@ -32,6 +32,7 @@ public class JeuderoleService {
     @Autowired
     private EnfanrRepository enfanrRepository;
 
+
     // Méthode pour obtenir l'administrateur connecté
     private Admin getCurrentAdmin() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -41,16 +42,19 @@ public class JeuderoleService {
     }
 
     public Jeuderole ajouterJeuDeRole(Jeuderole jeuderole, MultipartFile image) throws IOException {
-        if (jeuderole.getQuestion() == null) {
-            throw new RuntimeException("Les questions sont obligatoires.");
+        if (jeuderole.getMetier() == null) {
+            throw new RuntimeException("La catégorie est obligatoire.");
         }
+        //if (jeuderole.getQuestion() == null || jeuderole.getQuestion().isEmpty()) {
+           // throw new RuntimeException("Les questions sont obligatoires.");
+        //}
 
-        if (image != null && !image.isEmpty()) {
-            String imageUrl = fileStorageService.sauvegarderImage(image);
-            jeuderole.setImageUrl(imageUrl);
-        }
-
+        String cheminImage = fileStorageService.sauvegarderImage(image);
+        jeuderole.setImageUrl(cheminImage); // Définit l'URL ou le chemin de la vidéo
+        Admin admin = getCurrentAdmin();
+        jeuderole.setAdmin(admin); // Enregi
         return jeuderoleRepository.save(jeuderole);
+
     }
 
     public Jeuderole modifierJeuDeRole(Long id, Jeuderole jeuderole) {
@@ -59,7 +63,7 @@ public class JeuderoleService {
             Jeuderole jeuExist = jeuOptional.get();
             jeuExist.setNom(jeuderole.getNom());
             jeuExist.setDescription(jeuderole.getDescription());
-            jeuExist.setQuestion(jeuderole.getQuestion());
+            //jeuExist.setQuestion(jeuderole.getQuestion()); // Mise à jour des questions
             return jeuderoleRepository.save(jeuExist);
         } else {
             throw new RuntimeException("Le jeu de rôle avec l'ID " + id + " n'existe pas.");
@@ -100,12 +104,8 @@ public class JeuderoleService {
                 .orElseThrow(() -> new RuntimeException("La question avec l'ID " + questionId + " n'existe pas."));
 
         // Vérifier la réponse
-        Optional<Reponse> reponseTrouvee = question.getReponses().stream()
-                .filter(reponse -> reponse.getLibelle().equalsIgnoreCase(reponseDonnee))
-                .findFirst();
-
-        if (reponseTrouvee.isPresent()) {
-            if (reponseTrouvee.get().getCorrect()) {
+        if (question.getReponse() != null && question.getReponse().getReponsepossible().contains(reponseDonnee)) {
+            if (question.getReponse().getCorrect()) {
                 enfant.setTentativesRestantes(3); // Réinitialiser les tentatives
                 enfanrRepository.save(enfant);
                 return "Réponse correcte! Vous avez gagné des points.";
@@ -154,12 +154,9 @@ public class JeuderoleService {
         return scoreTotal; // Retourne le score total
     }
 
-    public List<Question> jouer(Long jeuId) {
-        Optional<Jeuderole> jeuOptional = jeuderoleRepository.findById(jeuId);
-        if (jeuOptional.isPresent()) {
-            return jeuOptional.get().getQuestion();
-        } else {
-            throw new RuntimeException("Le jeu de rôle avec l'ID " + jeuId + " n'existe pas.");
-        }
+
+    public List<Jeuderole> getAllJeuDeRole() {
+        return jeuderoleRepository.findAll(); // Fetch all Jeuderole instances
     }
+
 }

@@ -11,7 +11,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:4200","http://localhost:50892")
+                .allowedOrigins("http://localhost:4200","http://localhost:50771")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
@@ -20,8 +20,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/uploads/**")
-
-        .addResourceLocations("file:/C:/Users/mariame.daou/Documents/projet de fin/jobaventure_backend/uploads/images/");
+                .addResourceLocations("file:uploads/");
     }
 
 }

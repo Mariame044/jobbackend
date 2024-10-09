@@ -54,14 +54,9 @@ public class EnfantController {
         return ResponseEntity.ok(categories);
     }
 
-    // Récupérer une catégorie par ID
-    @GetMapping("/{id1}")
 
-    public ResponseEntity<CategorieDto> getCategorieById(@PathVariable Long id) {
-        return categorieService.getCategorieById(id)
-                .map(ResponseEntity::ok) // Retourne 200 OK si la catégorie est trouvée
-                .orElse(ResponseEntity.notFound().build()); // Retourne 404 Not Found si non trouvée
-    }
+
+  
     @GetMapping("/{id}")
 
     public ResponseEntity<MetierDto> getMetier(@PathVariable Long id) {

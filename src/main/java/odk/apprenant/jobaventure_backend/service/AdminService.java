@@ -2,6 +2,7 @@ package odk.apprenant.jobaventure_backend.service;
 
 
 import jakarta.annotation.PostConstruct;
+import odk.apprenant.jobaventure_backend.dtos.UserDto;
 import odk.apprenant.jobaventure_backend.model.Admin;
 import odk.apprenant.jobaventure_backend.model.Professionnel;
 import odk.apprenant.jobaventure_backend.model.Role;
@@ -11,6 +12,8 @@ import odk.apprenant.jobaventure_backend.repository.ProfessionnelRepositoty;
 import odk.apprenant.jobaventure_backend.repository.RoleRepository;
 import odk.apprenant.jobaventure_backend.repository.UserRespository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -23,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class AdminService {
@@ -31,6 +35,8 @@ public class AdminService {
     @Autowired
 
     private AdminRepository adminRepository;
+
+
     @Autowired
     private ProfessionnelRepositoty professionnelRepositoty;
     @Autowired
@@ -39,7 +45,8 @@ public class AdminService {
     private UserRespository userRespository;
     @Autowired
     private FileStorageService fileStorageService;
-
+    @Autowired
+    private JavaMailSender mailSender;
 
     public AdminService(PasswordEncoder passwordEncoder) {
         this.passwordEncoder = passwordEncoder;
@@ -53,8 +60,11 @@ public class AdminService {
     }
 
 
-    public List<Role> lireRoleTypes() {
-        return List.of();
+    //public List<Role> lireRoleTypes() {
+       // return List.of();
+    //}
+    public List<Role> getAllRoles() {
+        return roleRepository.findAll(); // Récupère tous les rôles de la base de données
     }
 
 
@@ -151,13 +161,46 @@ public class AdminService {
         professionnel.setRole(roleProfessionnel);
 
         // Encoder le mot de passe du professionnel
-        professionnel.setPassword(passwordEncoder.encode(professionnel.getPassword()));
+        String motDePasseClair = professionnel.getPassword(); // Conserver le mot de passe clair pour l'email
+        professionnel.setPassword(passwordEncoder.encode(motDePasseClair));
 
         // Enregistrer le professionnel dans la base de données
-        professionnelRepositoty.save(professionnel);
+        try {
+            professionnelRepositoty.save(professionnel);
+            // Envoyer un email de confirmation
+            envoyerEmailConfirmation(professionnel, motDePasseClair);
+        } catch (Exception e) {
+            // Gérer l'erreur en journalisant l'exception ou en renvoyant un message d'erreur
+            System.err.println("Erreur lors de l'ajout du professionnel : " + e.getMessage());
+            throw new RuntimeException("Échec de l'ajout du professionnel");
+        }
     }
 
+    // Méthode pour envoyer l'email de confirmation
+    private void envoyerEmailConfirmation(Professionnel professionnel, String motDePasseClair) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(professionnel.getEmail());
+        message.setSubject("Compte Professionnel créé avec succès");
+        message.setText("Bonjour, votre compte professionnel a été créé avec succès. " +
+                "Veuillez modifier votre mot de passe pour des raisons de sécurité. Vos identifiants sont:\n" +
+                "Username: " + professionnel.getUsername() + "\nMot de passe: " + motDePasseClair);
+        try {
+            mailSender.send(message);
+        } catch (Exception e) {
+            // Gérer l'erreur d'envoi d'e-mail ici
+            System.err.println("Erreur lors de l'envoi de l'email : " + e.getMessage());
+        }
+    }
 
+    public List<UserDto> getAllUsers() {
+        getCurrentAdmin(); // Assurez-vous que l'admin a les droits d'accès
+        List<User> users = userRespository.findAll(); // Récupère la liste des utilisateurs
+
+        // Convertir la liste des utilisateurs en liste de UserDto
+        return users.stream()
+                .map(user -> new UserDto(user.getId(), user.getNom(), user.getEmail(), user.getRole())) // Utilisation de Role au lieu de String
+                .collect(Collectors.toList());
+    }
 
     @PostConstruct
     public void initAdmin() {

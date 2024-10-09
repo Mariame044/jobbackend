@@ -38,12 +38,12 @@ public class MetierController {
     @PostMapping("/ajout")
     public ResponseEntity<?> creerMetier(MultipartHttpServletRequest request) {
         try {
-            // Extraire les paramètres
+            // Extraction des paramètres
             String nom = request.getParameter("nom");
             String description = request.getParameter("description");
             String categorieIdStr = request.getParameter("categorieId");
 
-            // Vérification des valeurs nulles
+            // Vérification des champs obligatoires
             if (nom == null || nom.isEmpty()) {
                 return ResponseEntity.badRequest().body("Le nom est requis.");
             }
@@ -54,7 +54,7 @@ public class MetierController {
                 return ResponseEntity.badRequest().body("L'ID de catégorie est requis.");
             }
 
-            // Conversion de l'ID de catégorie et récupération de la catégorie
+            // Conversion de l'ID de catégorie
             Long categorieId;
             try {
                 categorieId = Long.parseLong(categorieIdStr);
@@ -62,32 +62,28 @@ public class MetierController {
                 return ResponseEntity.badRequest().body("Mauvais format d'ID de catégorie.");
             }
 
+            // Vérification de l'existence de la catégorie
             Optional<CategorieDto> categorieOpt = categorieService.getCategorieById(categorieId);
             if (!categorieOpt.isPresent()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Catégorie non trouvée.");
             }
 
-            // Créer une nouvelle instance de MetierDto
+            // Création d'une nouvelle instance de MetierDto
             MetierDto nouveauMetierDto = new MetierDto();
             nouveauMetierDto.setNom(nom);
             nouveauMetierDto.setDescription(description);
-            nouveauMetierDto.setCategorie(categorieOpt.get()); // Assurez-vous que ça ne retourne pas null
+            nouveauMetierDto.setCategorie(categorieOpt.get());
 
-            // Extraire le fichier image si présent
+            // Extraction de l'image si présente
             MultipartFile image = request.getFile("image");
-            //if (image != null) {
-               // String imageUrl = "http://localhost:8080/uploads/images/" +  savedMetier.getImageUrl();
-                //nouveauMetierDto.setImageUrl(imageUrl);
-            //}
 
-            // Ajouter le métier via le service
+            // Ajout du métier via le service
             MetierDto metierAjoute = metierService.creerMetier(nouveauMetierDto, image);
             return ResponseEntity.status(HttpStatus.CREATED).body(metierAjoute);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur interne du serveur.");
         }
     }
-
 
     @PutMapping(value = "/{id}", consumes = "multipart/form-data")
     public ResponseEntity<MetierDto> modifierMetier(

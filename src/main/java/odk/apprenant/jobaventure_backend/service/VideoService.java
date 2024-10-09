@@ -34,6 +34,7 @@ public interface VideoService {
 
     // Méthode pour regarder une vidéo
     Video regarderVideo(Long id);
+    List<Video> trouverVideosParMetierId(Long metierId);
 }
 
 // Implémentation du service VideoService
@@ -114,5 +115,9 @@ class VideoServiceImpl implements VideoService {
     @Override
     public void supprimerVideo(Long id) {
         videoRepository.deleteById(id);
+    }
+    @Override
+    public List<Video> trouverVideosParMetierId(Long metierId) {
+        return videoRepository.findByMetierId(metierId);
     }
 }

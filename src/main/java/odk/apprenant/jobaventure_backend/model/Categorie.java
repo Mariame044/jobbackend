@@ -14,6 +14,7 @@ public class Categorie {
     private int id;
     private String nom;
 
+
     @OneToMany
     private List<Metier> metier; // Une catégorie contient plusieurs métiers
 

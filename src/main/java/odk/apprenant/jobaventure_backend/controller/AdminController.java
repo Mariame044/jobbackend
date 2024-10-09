@@ -2,13 +2,17 @@ package odk.apprenant.jobaventure_backend.controller;
 
 
 
+import odk.apprenant.jobaventure_backend.dtos.UserDto;
 import odk.apprenant.jobaventure_backend.model.Admin;
 import odk.apprenant.jobaventure_backend.model.Professionnel;
 import odk.apprenant.jobaventure_backend.model.Role;
+import odk.apprenant.jobaventure_backend.model.User;
+import odk.apprenant.jobaventure_backend.repository.RoleRepository;
 import odk.apprenant.jobaventure_backend.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,6 +26,8 @@ public class AdminController {
 
     @Autowired
     private AdminService adminService;
+    @Autowired
+    private RoleRepository roleRepository;
 
     // Endpoint to create a new admin
     @PostMapping
@@ -29,7 +35,21 @@ public class AdminController {
         Admin createdAdmin = adminService.createAdmin(admin);
         return ResponseEntity.ok(createdAdmin);
     }
+    @GetMapping("users")
+    public ResponseEntity<List<UserDto>> getAllUsers() {
+        List<UserDto> users = adminService.getAllUsers();
+        return ResponseEntity.ok(users); // Retourne la liste des utilisateurs
+    }
 
+    // Endpoint pour récupérer un utilisateur par son ID
+    @GetMapping("/users{id}")
+    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+        User user = adminService.getAdminById(id); // Changez cette méthode si vous utilisez un autre service pour les utilisateurs
+        if (user == null) {
+            return ResponseEntity.notFound().build(); // Retourne 404 si l'utilisateur n'est pas trouvé
+        }
+        return ResponseEntity.ok(user);
+    }
     // Endpoint to get an admin by ID
     @GetMapping("/{id}")
     public ResponseEntity<Admin> getAdminById(@PathVariable Long id) {
@@ -53,15 +73,20 @@ public class AdminController {
 
     // Endpoint to add a professional to the authenticated admin
     @PostMapping("/professionnels")
+
     public ResponseEntity<String> addProfessionnel(@RequestBody Professionnel professionnel) {
         try {
             adminService.addProfessionnelToAdmin(professionnel);
             return ResponseEntity.ok("Professionnel ajouté avec succès!");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            // Log l'erreur pour faciliter le débogage
+            System.err.println("Erreur lors de la création du professionnel : " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Une erreur est survenue lors de la création du professionnel.");
         }
     }
-
     @PutMapping("/update")
     public ResponseEntity<Admin> updateAdmin(
             @RequestPart Admin updatedAdmin,
@@ -84,6 +109,12 @@ public class AdminController {
         String message = adminService.ajouterRoleType(role);
         return ResponseEntity.ok(message);
     }
+    @GetMapping("/listerole")
+    public ResponseEntity<List<Role>> getAllRoles() {
+        List<Role> roles = adminService.getAllRoles(); // Utilisez le service pour récupérer les rôles
+        return ResponseEntity.ok(roles); // Retourne la liste des rôles dans la réponse
+    }
+
 
     // Endpoint to modify a role type
     @PutMapping("/roles/{id}")

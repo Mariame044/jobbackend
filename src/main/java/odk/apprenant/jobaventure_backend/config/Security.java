@@ -34,11 +34,19 @@ public class Security {
                 .authorizeHttpRequests(request-> request
                         // Accès uniquement pour ADMIN
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/api/Admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/videos/**").hasRole("ADMIN")
-                        .requestMatchers("/api/metiers/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admins/**").hasRole("ADMIN")
+                        .requestMatchers("/api/categories/**").hasRole("ADMIN")
+                        .requestMatchers("/api/videos/**").hasAnyRole("Enfant", "ADMIN")
+                        .requestMatchers("/api/modifier/**").authenticated()
+                        .requestMatchers("/api/interview**").hasRole("ADMIN")
+                        .requestMatchers("/api/metiers/**").hasAnyRole("Enfant", "ADMIN")
+                        .requestMatchers("/api/reponse/**").hasAnyRole("Enfant", "ADMIN")
+                        .requestMatchers("/api/jeux/**").hasAnyRole("Enfant", "ADMIN")
+                        .requestMatchers("/api/question/**").hasAnyRole("Enfant", "ADMIN")
+                        .requestMatchers("/api/quiz/**").hasAnyRole("Enfant", "ADMIN")
                         .requestMatchers("/api/enfants/**").hasAnyRole("Enfant", "ADMIN") // Vérifiez cette ligne
                         .requestMatchers("/uploads/images/**").permitAll() // Autoriser l'accès à tous les fichiers dans /uploads/
+                        .requestMatchers("/uploads/videos/**").permitAll() // Autoriser l'accès à tous les fichiers dans /uploads/
                         // Routes publiques
 
                         .requestMatchers("/role/**").permitAll()

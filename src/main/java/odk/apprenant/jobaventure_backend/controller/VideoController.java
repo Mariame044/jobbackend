@@ -95,6 +95,7 @@ public class VideoController {
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+
     // Modifier une vidéo existante
     @PutMapping("/{id}")
     public ResponseEntity<Video> modifierVideo(
@@ -120,4 +121,12 @@ public class VideoController {
     public Video regarderVideo(@PathVariable Long id) {
         return videoService.regarderVideo(id);
     }
+
+
+    // Méthode pour récupérer les vidéos par métier en utilisant l'ID du métier
+    @GetMapping("/metier/{metierId}")
+    public List<Video> obtenirVideosParMetier(@PathVariable Long metierId) {
+        return videoService.trouverVideosParMetierId(metierId);
+    }
+
 }

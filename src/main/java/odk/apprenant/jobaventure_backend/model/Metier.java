@@ -26,13 +26,11 @@ public class Metier {
     //@JsonManagedReference // Pour éviter les références circulaires
     //private List<Video> video = new ArrayList<>();
 
-    @OneToMany(mappedBy = "metier")
-    @JsonManagedReference
-    private List<Quiz> quiz = new ArrayList<>();
+    //@OneToMany(mappedBy = "metier")
+   // @JsonManagedReference
+    //private List<Quiz> quiz = new ArrayList<>();
 
-    @OneToMany(mappedBy = "metier")
-    @JsonManagedReference
-    private List<Jeuderole> jeuderole = new ArrayList<>();
+
 
     //@OneToMany(mappedBy = "metier")
     //@JsonManagedReference

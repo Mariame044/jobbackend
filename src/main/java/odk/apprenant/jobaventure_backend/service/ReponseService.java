@@ -26,33 +26,27 @@ public class ReponseService {
     }
 
     // Récupérer une réponse par son ID
-    public Optional<Reponse> getReponseById(int id) {
+    public Optional<Reponse> getReponseById(long id) {
         return reponseRepository.findById(id);
     }
 
-    // Créer une nouvelle réponse et l'associer à une question
-    public Reponse createReponse(Reponse reponse, Long questionId) {
-        Optional<Question> question = questionRepository.findById(questionId);
-        if (question.isPresent()) {
-            reponse.setQuestion(question.get());
-            return reponseRepository.save(reponse);
-        } else {
-            throw new RuntimeException("Question non trouvée avec l'ID : " + questionId);
-        }
+    // Créer une nouvelle réponse et l'associer à une ou plusieurs questions
+    public Reponse createReponse(Reponse reponse) {
+        return reponseRepository.save(reponse);
     }
 
     // Mettre à jour une réponse existante
-    public Reponse updateReponse(int id, Reponse reponseDetails) {
-        Optional<Reponse> optionalReponse = reponseRepository.findById(id);
+    public Reponse updateReponse(int id, Reponse reponseDetails, List<Long> questionIds) {
+        Optional<Reponse> optionalReponse = reponseRepository.findById((long) id);
+
         if (optionalReponse.isPresent()) {
             Reponse reponse = optionalReponse.get();
-            reponse.setLibelle(reponseDetails.getLibelle());
+            reponse.setReponsepossible(reponseDetails.getReponsepossible());
             reponse.setCorrect(reponseDetails.getCorrect());
 
-            // Mise à jour de la relation avec la question, si nécessaire
-            if (reponseDetails.getQuestion() != null) {
-                reponse.setQuestion(reponseDetails.getQuestion());
-            }
+            // Mise à jour des relations avec les questions
+            List<Question> questions = questionRepository.findAllById(questionIds);
+
 
             return reponseRepository.save(reponse);
         } else {
@@ -61,7 +55,7 @@ public class ReponseService {
     }
 
     // Supprimer une réponse
-    public void deleteReponse(int id) {
+    public void deleteReponse(long id) {
         reponseRepository.deleteById(id);
     }
 }
