@@ -28,6 +28,8 @@ public class Jeuderole {
 
 
     private String imageUrl; // URL de l'image associée
+    // URL ou chemin vers le fichier audio associé
+    private String audioUrl;  // Nouveau champ pour l'audio
 
     @ManyToOne
 
@@ -40,5 +42,8 @@ public class Jeuderole {
     @JsonBackReference
     private Admin admin; // Interview associé
 
+    @ManyToOne
+    @JoinColumn(name = "trancheage_id")
+    private Trancheage trancheage;  // Tranche d'âge associée à l'interview
 
 }

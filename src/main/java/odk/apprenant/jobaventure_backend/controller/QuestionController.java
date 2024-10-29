@@ -58,6 +58,7 @@ public class QuestionController {
         Question createdQuestion = questionService.createQuestion(
                 question,
                 questionDto.getQuizId(),      // ID du quiz
+
                 questionDto.getJeuDeRoleId(), // ID du jeu de rôle
                 questionDto.getReponseId()     // ID de la réponse
         );

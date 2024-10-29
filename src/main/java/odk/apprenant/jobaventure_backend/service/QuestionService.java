@@ -1,13 +1,8 @@
 package odk.apprenant.jobaventure_backend.service;
 
 
-import jakarta.persistence.EntityNotFoundException;
-import odk.apprenant.jobaventure_backend.dtos.QuestionDto;
 import odk.apprenant.jobaventure_backend.model.*;
-import odk.apprenant.jobaventure_backend.repository.JeuderoleRepository;
-import odk.apprenant.jobaventure_backend.repository.QuestionRepository;
-import odk.apprenant.jobaventure_backend.repository.QuizRepository;
-import odk.apprenant.jobaventure_backend.repository.ReponseRepository;
+import odk.apprenant.jobaventure_backend.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +22,8 @@ public class QuestionService {
     private JeuderoleRepository jeuderoleRepository;
     @Autowired
     private ReponseRepository reponseRepository;
+    @Autowired
+    private TrancheageRepository trancheageRepository;
 
     // Récupérer toutes les questions
     public List<Question> getAllQuestions() {
@@ -43,6 +40,7 @@ public class QuestionService {
         if (question.getTypeQuestion() == null) {
             throw new RuntimeException("Le type de question est obligatoire.");
         }
+
 
         // Vérification et association d'un jeu de rôle si le type de question est JEUX
         if (question.getTypeQuestion() == TypeQuestion.JEU_DE_ROLE) {
@@ -80,6 +78,7 @@ public class QuestionService {
                 throw new RuntimeException("Réponse non trouvée avec l'ID : " + reponseId);
             }
         }
+
 
         return questionRepository.save(question);
     }

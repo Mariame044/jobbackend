@@ -15,10 +15,12 @@ public class FileStorageService {
     // Dossier où les vidéos et les images seront enregistrées
     private final String dossierVidéos = "uploads/videos/";
     private final String dossierImages = "uploads/images/";
+    private final String dossierAudios = "uploads/audios/";  // Nouveau dossier pour les audios
 
     // Extensions autorisées pour les fichiers
     private final String[] extensionsImages = { "jpg", "jpeg", "png", "gif" };
     private final String[] extensionsVidéos = { "mp4", "avi", "mov", "wmv" };
+    private final String[] extensionsAudios = { "mp3", "wav", "aac", "flac" };  // Nouvelles extensions pour audio
 
     public String sauvegarderVideo(MultipartFile fichier) throws IOException {
         // Vérifie si le fichier est une vidéo
@@ -35,6 +37,14 @@ public class FileStorageService {
         }
         return sauvegarderFichier(fichier, dossierImages);
     }
+    public String sauvegarderAudio(MultipartFile fichier) throws IOException {
+        // Vérifie si le fichier est un audio
+        if (!estExtensionValide(fichier.getOriginalFilename(), extensionsAudios)) {
+            throw new IOException("Le fichier n'est pas un fichier audio valide.");
+        }
+        return sauvegarderFichier(fichier, dossierAudios);  // Utilise le nouveau dossier audio
+    }
+
 
     private String sauvegarderFichier(MultipartFile fichier, String dossier) throws IOException {
         // Vérifie si le dossier de destination existe, sinon le créer

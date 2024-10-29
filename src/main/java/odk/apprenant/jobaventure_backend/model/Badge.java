@@ -26,4 +26,6 @@ public class Badge {
 
     @ManyToMany(mappedBy = "badge")
     private List<Enfant> enfant = new ArrayList<>();
+
+
 }

@@ -1,5 +1,7 @@
 package odk.apprenant.jobaventure_backend.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -19,22 +21,29 @@ public class Quiz {
     private Integer score;
     private Integer resultat;
     private Boolean badget;
-    // Relation OneToMany avec Question (si un quiz a plusieurs questions)
-    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
-    private List<Question> question = new ArrayList<>();
+
+
 
     @ManyToOne
     @JoinColumn(name = "metier_id")
-    private Metier metier;
 
-    @ManyToMany(mappedBy = "quiz")
-    private List<Enfant> enfant = new ArrayList<>();
+    private Metier metier;// Interview associée à un professionnel
 
-    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
-    private List<Question> questions;  // Un quiz contient plusieurs questions
+    @ManyToOne
+    @JoinColumn(name = "trancheage_id")
+    private Trancheage trancheage;  // Tranche d'âge associée à l'interview
+
+    @ManyToOne
+    @JoinColumn(name = "admin_id")
+    @JsonBackReference
+    private Admin admin; // Interview associé
+
 
     @ManyToOne
     @JoinColumn(name = "badge_id")
     private Badge badge;  // Un quiz est lié à un seul badge
 
+    // Si vous avez une relation avec Enfant, décommenter la section suivante
+    //@ManyToMany(mappedBy = "quiz")
+    //private List<Enfant> enfants = new ArrayList<>();
 }

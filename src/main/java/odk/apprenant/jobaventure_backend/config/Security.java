@@ -35,21 +35,26 @@ public class Security {
                         // Accès uniquement pour ADMIN
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/api/admins/**").hasRole("ADMIN")
+                        .requestMatchers("/api/statistiques/**").hasRole("ADMIN")
+                        .requestMatchers("/api/parents/**").hasRole("Parent")
                         .requestMatchers("/api/categories/**").hasRole("ADMIN")
-                        .requestMatchers("/api/videos/**").hasAnyRole("Enfant", "ADMIN")
+                        .requestMatchers("/api/age/**").hasRole("ADMIN")
+                        .requestMatchers("/api/videos/**").hasAnyRole("Enfant", "ADMIN", "PROFESSIONNEL")
                         .requestMatchers("/api/modifier/**").authenticated()
-                        .requestMatchers("/api/interview**").hasRole("ADMIN")
+                        .requestMatchers("/api/interview/**").hasAnyRole("Enfant", "ADMIN", "PROFESSIONNEL")
+
                         .requestMatchers("/api/metiers/**").hasAnyRole("Enfant", "ADMIN")
-                        .requestMatchers("/api/reponse/**").hasAnyRole("Enfant", "ADMIN")
-                        .requestMatchers("/api/jeux/**").hasAnyRole("Enfant", "ADMIN")
-                        .requestMatchers("/api/question/**").hasAnyRole("Enfant", "ADMIN")
-                        .requestMatchers("/api/quiz/**").hasAnyRole("Enfant", "ADMIN")
-                        .requestMatchers("/api/enfants/**").hasAnyRole("Enfant", "ADMIN") // Vérifiez cette ligne
+                        .requestMatchers("/api/reponse/**").hasAnyRole("Enfant", "ADMIN", "PROFESSIONNEL")
+                        .requestMatchers("/api/jeux/**").hasAnyRole("Enfant", "ADMIN", "PROFESSIONNEL")
+                        .requestMatchers("/api/question/**").hasAnyRole("Enfant", "ADMIN", "PROFESSIONNEL")
+                        .requestMatchers("/api/quiz/**").hasAnyRole("Enfant", "ADMIN", "PROFESSIONNEL")
+                        .requestMatchers("/api/enfants/**").hasAnyRole("Enfant", "ADMIN", "PROFESSIONNEL") // Vérifiez cette ligne
                         .requestMatchers("/uploads/images/**").permitAll() // Autoriser l'accès à tous les fichiers dans /uploads/
                         .requestMatchers("/uploads/videos/**").permitAll() // Autoriser l'accès à tous les fichiers dans /uploads/
+                        .requestMatchers("/uploads/audios/**").permitAll() // Autoriser l'accès à tous les fichiers dans /uploads/
                         // Routes publiques
-
                         .requestMatchers("/role/**").permitAll()
+
                         .requestMatchers("/reponse/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
 

@@ -4,10 +4,9 @@ package odk.apprenant.jobaventure_backend.controller;
 import odk.apprenant.jobaventure_backend.dtos.CategorieDto;
 import odk.apprenant.jobaventure_backend.dtos.MetierDto;
 import odk.apprenant.jobaventure_backend.model.Enfant;
+import odk.apprenant.jobaventure_backend.model.Jeuderole;
 import odk.apprenant.jobaventure_backend.model.Metier;
-import odk.apprenant.jobaventure_backend.service.CategorieService;
-import odk.apprenant.jobaventure_backend.service.EnfantService;
-import odk.apprenant.jobaventure_backend.service.MetierService;
+import odk.apprenant.jobaventure_backend.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -23,6 +22,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/enfants")
@@ -35,6 +35,8 @@ public class EnfantController {
     private CategorieService categorieService;
     @Autowired
     private MetierService metierService; // Injection du service
+    @Autowired
+    private StatistiqueService statistiqueService;
 
     @PostMapping("/registerenfant")
     public ResponseEntity<Enfant> registerEnfant(@RequestBody Enfant enfant) {
@@ -46,6 +48,21 @@ public class EnfantController {
         }
     }
 
+    // Endpoint pour obtenir les informations de progression de l'enfant
+    @GetMapping("/progression")
+
+    public ResponseEntity<Map<String, Object>> getProgression() {
+        try {
+            // Appel de la méthode getProgression depuis le service pour obtenir les infos
+            Map<String, Object> progression = enfantService.getProgression();
+
+            // Retourner une réponse HTTP 200 avec les informations de progression
+            return ResponseEntity.ok(progression);
+        } catch (Exception e) {
+            // En cas d'erreur, retourner une réponse HTTP 500
+            return ResponseEntity.status(500).body(null);
+        }
+    }
     // Récupérer toutes les catégories
     @GetMapping("liste")
 
@@ -53,14 +70,19 @@ public class EnfantController {
         List<CategorieDto> categories = categorieService.getAllCategories();
         return ResponseEntity.ok(categories);
     }
-
+    // Endpoint pour récupérer les jeux du parent connecté
+    @GetMapping("/jeux")
+    public List<Jeuderole> getJeuxForCurrentEnfant() {
+        return enfantService.getJeuxForCurrentEnfant();  // Appelle le service
+    }
 
 
   
-    @GetMapping("/{id}")
+    @GetMapping("metiers/{id}")
 
     public ResponseEntity<MetierDto> getMetier(@PathVariable Long id) {
         MetierDto metier = metierService.getMetier(id);
+        statistiqueService.incrementerVueMetier(id);
         return ResponseEntity.ok(metier);
     }
     // Récupérer tous les métiers

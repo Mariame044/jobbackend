@@ -2,10 +2,12 @@ package odk.apprenant.jobaventure_backend.controller;
 
 
 import odk.apprenant.jobaventure_backend.dtos.MetierDto;
-import odk.apprenant.jobaventure_backend.model.Categorie;
-import odk.apprenant.jobaventure_backend.model.Metier;
-import odk.apprenant.jobaventure_backend.model.Video;
+import odk.apprenant.jobaventure_backend.model.*;
+import odk.apprenant.jobaventure_backend.repository.EnfanrRepository;
+import odk.apprenant.jobaventure_backend.repository.TrancheageRepository;
+import odk.apprenant.jobaventure_backend.repository.VideoRepository;
 import odk.apprenant.jobaventure_backend.service.MetierService;
+import odk.apprenant.jobaventure_backend.service.StatistiqueService;
 import odk.apprenant.jobaventure_backend.service.VideoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,6 +30,12 @@ public class VideoController {
     private VideoService videoService;
     @Autowired
     private MetierService metierService;
+    @Autowired
+    private TrancheageRepository trancheageRepository;
+    @Autowired
+    private EnfanrRepository enfanrRepository;
+    @Autowired
+    private StatistiqueService statistiqueService;
 
     @PostMapping
     public ResponseEntity<Video> ajouterVideo(MultipartHttpServletRequest request) {
@@ -41,18 +49,27 @@ public class VideoController {
             // Extraire les autres paramètres
             String duree = request.getParameter("duree");
             String description = request.getParameter("description");
+            String titre = request.getParameter("titre");
             String metierIdStr = request.getParameter("metierId");
+            String trancheageIdStr = request.getParameter("trancheageId");
 
             // Conversion de l'ID de métier et récupération du métier
             // Conversion de l'ID de métier et récupération du métier
             Long metierId = Long.parseLong(metierIdStr);
             MetierDto metierDto = metierService.getMetier(metierId); // Utilisation de MetierDto
+            Long trancheageId = Long.parseLong(trancheageIdStr);
+            Trancheage trancheage = trancheageRepository.findById(trancheageId)
+                    .orElseThrow(() -> new RuntimeException("Tranche d'âge non trouvée avec l'ID : " + trancheageId));
+
 
 
             // Créer une nouvelle instance de Video
             Video nouvelleVideo = new Video();
             nouvelleVideo.setDuree(duree);
             nouvelleVideo.setDescription(description);
+            nouvelleVideo.setTitre(titre);
+            nouvelleVideo.setTrancheage(trancheage); // Lier la tranche d'âge à la vidéo
+
             //nouvelleVideo.setMetier(metierDto); // Lier le métier à la vidéo
             nouvelleVideo.setMetier(convertToEntity(metierDto)); // Convertir MetierDto en Metier
 
@@ -119,14 +136,34 @@ public class VideoController {
     // Endpoint pour regarder une vidéo
     @GetMapping("/regarder/{id}")
     public Video regarderVideo(@PathVariable Long id) {
+        statistiqueService.incrementerVueVideo(id);
         return videoService.regarderVideo(id);
     }
 
 
     // Méthode pour récupérer les vidéos par métier en utilisant l'ID du métier
-    @GetMapping("/metier/{metierId}")
-    public List<Video> obtenirVideosParMetier(@PathVariable Long metierId) {
-        return videoService.trouverVideosParMetierId(metierId);
+    //@GetMapping("/metier/{metierId}")
+    //public List<Video> obtenirVideosParMetier(@PathVariable Long metierId) {
+        //return videoService.trouverVideosParMetierId(metierId);
+    //}
+    // Méthode pour récupérer les vidéos d'un enfant
+    @GetMapping("/pour-enfant")
+    public ResponseEntity<List<Video>> obtenirVideosPourEnfantConnecte() {
+        try {
+            List<Video> videosPourEnfant = videoService.trouverVideosPourEnfantParAge(); // Méthode ajustée
+            return ResponseEntity.ok(videosPourEnfant);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+    @GetMapping("/pour-enfant/metier/{metierId}")
+    public ResponseEntity<List<Video>> obtenirVideosParMetierEtAge(@PathVariable Long metierId) {
+        try {
+            List<Video> videos = videoService.trouverVideosParMetierEtAge(metierId); // Appel à la nouvelle méthode
+            return ResponseEntity.ok(videos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
 }

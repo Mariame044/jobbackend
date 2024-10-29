@@ -1,13 +1,17 @@
 package odk.apprenant.jobaventure_backend.controller;
 
 
+import jakarta.persistence.EntityNotFoundException;
+import odk.apprenant.jobaventure_backend.model.Enfant;
 import odk.apprenant.jobaventure_backend.model.Parent;
 import odk.apprenant.jobaventure_backend.service.ParentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -56,4 +60,34 @@ public class ParentController {
         parentService.supprimerParent(id);
         return ResponseEntity.noContent().build();
     }
+    // Endpoint pour superviser un enfant
+    @PostMapping("/supervise-enfant/{enfantEmail}")
+    public ResponseEntity<Enfant> superviseEnfant(@PathVariable String  enfantEmail) {
+        Enfant enfantSupervise = parentService.superviseEnfant( enfantEmail);
+        return ResponseEntity.ok(enfantSupervise); // Retourner l'enfant supervisé avec un statut 200
+    }
+    // Endpoint pour voir la progression d'un enfant supervisé
+    @GetMapping("/enfant/progression/{enfantEmail}")
+    public ResponseEntity<Map<String, Object>> getProgressionEnfant(@PathVariable String enfantEmail) {
+        try {
+            Map<String, Object> progression = parentService.getProgressionEnfant(enfantEmail);
+            return ResponseEntity.ok(progression); // Retourne une réponse 200 avec la progression
+        } catch (EntityNotFoundException e) {
+            // Gère le cas où l'enfant n'est pas trouvé
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Enfant non trouvé"));
+        } catch (SecurityException e) {
+            // Gère le cas où le parent tente d'accéder à un enfant qui n'est pas sous sa supervision
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "Accès refusé"));
+        } catch (Exception e) {
+            // Gère tout autre type d'exception
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erreur interne du serveur"));
+        }
+    }
+
+
+    @GetMapping("/getEnfantsByCurrentParent")
+    public List<Enfant> getEnfantsByCurrentParent() {
+        return parentService.getEnfantsByCurrentParent(); // Appel du service
+    }
+
 }

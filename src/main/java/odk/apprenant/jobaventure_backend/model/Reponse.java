@@ -16,7 +16,7 @@ public class Reponse {
 
     @ElementCollection
     private List<String> reponsepossible;  // Liste des choix possibles pour la question
-    private Boolean correct;
+    private String correct;
     ///@OneToMany(mappedBy = "reponse")  // Relation OneToMany avec Question
     //private List<Question> question;
 }

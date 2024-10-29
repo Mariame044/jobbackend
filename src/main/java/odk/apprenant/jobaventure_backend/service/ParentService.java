@@ -1,5 +1,6 @@
 package odk.apprenant.jobaventure_backend.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import odk.apprenant.jobaventure_backend.model.Admin;
 import odk.apprenant.jobaventure_backend.model.Enfant;
 import odk.apprenant.jobaventure_backend.model.Parent;
@@ -14,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -81,39 +83,46 @@ public class ParentService {
     public void supprimerParent(Long id) {
         parentRepository.deleteById(id);
     }
-    // Méthode pour assigner un enfant à un parent (Superviser)
-    public Parent superviseEnfant(Long parentId, Long enfantId) {
+    public Enfant superviseEnfant(String enfantEmail) {
         // Vérifier le parent actuellement authentifié
-        Parent currentParent = getCurrentParent();
+        Parent currentParent = getCurrentParent(); // Obtenir le parent actuellement connecté
 
-        // Vérifier si le parent et l'enfant existent
-        Optional<Parent> parent = parentRepository.findById(parentId);
-        Optional<Enfant> enfant = enfanrRepository.findById(enfantId);
+        // Vérifier si l'enfant existe par son email
+        Optional<Enfant> enfantOpt = enfanrRepository.findByEmail(enfantEmail); // Méthode à définir dans le repository
 
-        if (parent.isPresent() && enfant.isPresent()) {
-            Enfant enfantExistant = enfant.get();
-            enfantExistant.setParent(parent.get()); // Assigner le parent à l'enfant
+        if (enfantOpt.isPresent()) {
+            Enfant enfantExistant = enfantOpt.get(); // Récupérer l'enfant
+            enfantExistant.setParent(currentParent); // Assigner le parent à l'enfant
             enfanrRepository.save(enfantExistant); // Sauvegarder l'enfant avec le parent assigné
 
-            return parent.get();
+            return enfantExistant; // Retourner l'enfant supervisé
         } else {
-            throw new RuntimeException("Parent ou Enfant non trouvé");
+            // Lancer une exception personnalisée si l'enfant n'est pas trouvé
+            throw new EntityNotFoundException("Enfant avec l'email " + enfantEmail + " non trouvé");
         }
     }
 
-    // Méthode pour récupérer tous les enfants supervisés par un parent
-    public List<Enfant> getEnfantsByParent(Long parentId) {
-        // Vérifier le parent actuellement authentifié
-        Parent currentParent = getCurrentParent();
 
-        // Récupérer le parent par son ID
-        Optional<Parent> parent = parentRepository.findById(parentId);
-
-        if (parent.isPresent()) {
-            return parent.get().getEnfant(); // Retourner la liste des enfants supervisés
-        } else {
-            throw new RuntimeException("Parent non trouvé");
-        }
+    // Méthode pour récupérer tous les enfants supervisés par le parent connecté
+    public List<Enfant> getEnfantsByCurrentParent() {
+        Parent currentParent = getCurrentParent(); // Obtenir le parent authentifié
+        return enfanrRepository.findByParent(currentParent); // Rechercher les enfants associés
     }
+    // Méthode pour obtenir la progression d'un enfant supervisé par le parent connecté
+    public Map<String, Object> getProgressionEnfant(String enfantEmail) {
+        Parent currentParent = getCurrentParent(); // Obtenir le parent connecté
+
+        // Rechercher l'enfant par son email et vérifier qu'il est supervisé par ce parent
+        Enfant enfant = enfanrRepository.findByEmail(enfantEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Enfant avec l'email " + enfantEmail + " non trouvé"));
+
+        if (!enfant.getParent().equals(currentParent)) {
+            throw new SecurityException("Accès refusé : vous ne pouvez voir la progression que de vos propres enfants.");
+        }
+
+        // Retourner la progression de l'enfant
+        return enfant.getProgression();
+    }
+
 }
 

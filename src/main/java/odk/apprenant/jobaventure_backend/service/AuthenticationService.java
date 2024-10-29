@@ -38,7 +38,7 @@ public class AuthenticationService {
 
     private final RoleRepository roleRepository;
 
-
+@Autowired
     private ParentRepository parentRepository;
     @Autowired
     private EnfanrRepository enfanrRepository;
@@ -89,12 +89,12 @@ public class AuthenticationService {
             Enfant enfant = new Enfant(); // Création d'une instance d'Enfant
             enfant.setEmail(input.getEmail());
             enfant.setNom(input.getNom());
-            enfant.setAge(input.getAge()); // Assurez-vous que l'âge est passé dans RegisterUserDto
+            enfant.setAge(Integer.parseInt(input.getAge())); // Assurez-vous que l'âge est passé dans RegisterUserDto
             enfant.setPassword(passwordEncoder.encode(input.getPassword()));
             enfant.setRole(role); // Associer le rôle à l'enfant
             return enfanrRepository.save(enfant); // Sauvegarder l'enfant dans la base de données
 
-        } else if ("Parent".equalsIgnoreCase(input.getRole())) {
+        } if ("Parent".equalsIgnoreCase(input.getRole())) {
             Parent parent = new Parent(); // Création d'une instance de Parent
             parent.setNom(input.getNom());
             parent.setProfession(input.getProfession()); // Assurez-vous que la profession est passée dans RegisterUserDto

@@ -3,11 +3,9 @@ package odk.apprenant.jobaventure_backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import odk.apprenant.jobaventure_backend.dtos.MetierDto;
-import odk.apprenant.jobaventure_backend.model.Interview;
-import odk.apprenant.jobaventure_backend.model.Jeuderole;
-import odk.apprenant.jobaventure_backend.model.Metier;
-import odk.apprenant.jobaventure_backend.model.Question;
+import odk.apprenant.jobaventure_backend.model.*;
 import odk.apprenant.jobaventure_backend.repository.JeuderoleRepository;
+import odk.apprenant.jobaventure_backend.repository.TrancheageRepository;
 import odk.apprenant.jobaventure_backend.service.JeuderoleService;
 import odk.apprenant.jobaventure_backend.service.MetierService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("api/jeux")
@@ -34,28 +29,35 @@ public class JeuderoleController {
     private JeuderoleRepository jeuderoleRepository;
     @Autowired
     private ObjectMapper objectMapper; // Déclaration de ObjectMapper
+    @Autowired
+    private TrancheageRepository trancheageRepository;
 
 
     // Ajouter un jeu de rôle
     // Endpoint pour ajouter une nouvelle interview
     @PostMapping
     public ResponseEntity<Jeuderole> ajouterJeuDeRole(MultipartHttpServletRequest request) {
-        try {
-            // Extraire le fichier vidéo
-            MultipartFile image = request.getFile("image");
-            if (image == null || image.isEmpty()) {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
+            try {
+                MultipartFile image = request.getFile("image");
+                MultipartFile audio = request.getFile("audio");
 
+                if (image == null || image.isEmpty() || audio == null || audio.isEmpty()) {
+                    return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+                }
             // Extraire les autres paramètres
 
             String nom = request.getParameter("nom");
             String description = request.getParameter("description");
             String metierIdStr = request.getParameter("metierId");
+            String trancheageIdStr = request.getParameter("trancheageId");
 
             // Conversion de l'ID de métier et récupération du métier
             Long metierId = Long.parseLong(metierIdStr);
             MetierDto metierDto = metierService.getMetier(metierId); // Récupération du métier
+            Long trancheageId = Long.parseLong(trancheageIdStr);
+            Trancheage trancheage = trancheageRepository.findById(trancheageId)
+                    .orElseThrow(() -> new RuntimeException("Tranche d'âge non trouvée avec l'ID : " + trancheageId));
+
 
             // Créer une nouvelle instance de Interview
             Jeuderole nouvelleJeuderole = new Jeuderole();
@@ -63,15 +65,20 @@ public class JeuderoleController {
             nouvelleJeuderole.setNom(nom);
             nouvelleJeuderole.setDescription(description);
             nouvelleJeuderole.setMetier(convertToEntity(metierDto)); // Convertir MetierDto en Metier
+            nouvelleJeuderole.setTrancheage(trancheage); // Lier la tranche d'âge à la vidéo
 
             // Ajouter l'interview via le service
-            Jeuderole jeuderoleAjoutee = jeuderoleService.ajouterJeuDeRole(nouvelleJeuderole, image);
+            Jeuderole jeuderoleAjoutee = jeuderoleService.ajouterJeuDeRole(nouvelleJeuderole, image, audio);
 
             // Définir l'URL
             String url = "http://localhost:8080/uploads/images/" + image.getOriginalFilename();
             jeuderoleAjoutee.setImageUrl(url); // Ajouter l'URL au modèle
 
-            return new ResponseEntity<>( jeuderoleAjoutee, HttpStatus.CREATED);
+                String audioUrl = "http://localhost:8080/uploads/audios/" + audio.getOriginalFilename();
+                jeuderoleAjoutee.setAudioUrl(audioUrl);  // Set the audio URL
+
+
+                return new ResponseEntity<>( jeuderoleAjoutee, HttpStatus.CREATED);
         } catch (IOException e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (NumberFormatException e) {
@@ -111,29 +118,62 @@ public class JeuderoleController {
         return ResponseEntity.ok(jeuDeRole);
     }
 
-
-
-    // Vérifier la réponse d'un enfant
-    @PostMapping("/{jeuId}/verifier-reponse")
-    public ResponseEntity<String> verifierReponse(@RequestParam Long enfantId,
-                                                  @PathVariable Long jeuId,
-                                                  @RequestParam Long questionId,
-                                                  @RequestParam String reponseDonnee) {
-        String resultat = jeuderoleService.verifierReponse(enfantId, jeuId, questionId, reponseDonnee);
-        return ResponseEntity.ok(resultat);
+    // Méthode pour récupérer les vidéos d'un enfant
+    @GetMapping("/pour-enfant")
+    public ResponseEntity<List<Jeuderole>> obtenirVideosPourEnfantConnecte() {
+        try {
+            List<Jeuderole> jeuderolesPourEnfant = jeuderoleService.trouverVideosPourEnfantParAge(); // Méthode ajustée
+            return ResponseEntity.ok(jeuderolesPourEnfant);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
-    // Calculer le score d'un enfant
-    @PostMapping("/{jeuId}/calculer-score")
-    public ResponseEntity<Integer> calculerScore(@RequestParam Long enfantId,
-                                                 @PathVariable Long jeuId,
-                                                 @RequestBody Map<Long, String> reponsesDonnees) {
-        int score = jeuderoleService.calculerScore(enfantId, jeuId, reponsesDonnees);
+
+    @GetMapping("/{jeuId}/jouer") // Annotation pour gérer l'URL /api/jeux/{jeuId}/jouer
+    public List<Question> jouer(@PathVariable Long jeuId) {
+        return jeuderoleService.jouer(jeuId); // Appel de la méthode dans le service
+    }
+    // Vérifier la réponse d'une question
+    @PostMapping("/{jeuId}/questions/{questionId}/verifier")
+    public ResponseEntity<Map<String, String>> verifierReponse(
+            @PathVariable Long jeuId,
+            @PathVariable Long questionId,
+            @RequestBody Map<String, String> body) {
+        String reponseDonnee = body.get("reponseDonnee");
+        String resultat = jeuderoleService.verifierReponse(jeuId, questionId, reponseDonnee);
+
+        // Renvoyer la réponse au format JSON
+        Map<String, String> response = new HashMap<>();
+        response.put("message", resultat); // Le message que vous souhaitez renvoyer
+        return ResponseEntity.ok(response);
+    }
+
+
+
+    // Calculer le score basé sur les réponses données
+    @PostMapping("/{jeuId}/calculerScore")
+    public ResponseEntity<Integer> calculerScore(
+            @PathVariable Long jeuId,
+            @RequestBody Map<Long, String> reponsesDonnees) {
+        int score = jeuderoleService.calculerScore(jeuId, reponsesDonnees);
         return ResponseEntity.ok(score);
     }
+
+
     @GetMapping
     public ResponseEntity<List<Jeuderole>> getAllJeuDeRole() {
         List<Jeuderole> jeuxDeRole = jeuderoleRepository.findAll();
         return new ResponseEntity<>(jeuxDeRole, HttpStatus.OK);
+    }
+
+    @GetMapping("/pour-enfant/metier/{metierId}")
+    public ResponseEntity<List<Jeuderole>> obtenirVideosParMetierEtAge(@PathVariable Long metierId) {
+        try {
+            List<Jeuderole> jeuderoles = jeuderoleService.trouverJeuderoleParMetierEtAge(metierId); // Appel à la nouvelle méthode
+            return ResponseEntity.ok(jeuderoles);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 }

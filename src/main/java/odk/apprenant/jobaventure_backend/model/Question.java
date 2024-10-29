@@ -1,5 +1,6 @@
 package odk.apprenant.jobaventure_backend.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -23,6 +24,7 @@ public class Question {
 
     @ManyToOne
     @JoinColumn(name = "quiz_id")
+
     private Quiz quiz;  // Une question est liée à un seul quiz
 
     @ManyToOne // Assuming many questions can belong to one Jeuderole
@@ -32,4 +34,9 @@ public class Question {
     @ManyToOne  // Relation ManyToOne avec Reponse (une question a une seule réponse)
     @JoinColumn(name = "reponse_id")  // Colonne de clé étrangère vers la réponse
     private Reponse reponse;  // Une question est liée à une seule réponse
+
+    @ManyToOne
+    @JoinColumn(name = "trancheage_id")
+    private Trancheage trancheage;  // Tranche d'âge associée à l'interview
+
 }
