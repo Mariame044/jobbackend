@@ -2,6 +2,7 @@ package odk.apprenant.jobaventure_backend.config;
 
 
 import lombok.AllArgsConstructor;
+import odk.apprenant.jobaventure_backend.model.Professionnel;
 import odk.apprenant.jobaventure_backend.service.UseService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,7 +39,7 @@ public class Security {
                         .requestMatchers("/api/statistiques/**").hasRole("ADMIN")
                         .requestMatchers("/api/parents/**").hasRole("Parent")
                         .requestMatchers("/api/categories/**").hasRole("ADMIN")
-                        .requestMatchers("/api/age/**").hasRole("ADMIN")
+                        .requestMatchers("/api/age/**").hasAnyRole("ADMIN", "PROFESSIONNEL")
                         .requestMatchers("/api/videos/**").hasAnyRole("Enfant", "ADMIN", "PROFESSIONNEL")
                         .requestMatchers("/api/modifier/**").authenticated()
                         .requestMatchers("/api/interview/**").hasAnyRole("Enfant", "ADMIN", "PROFESSIONNEL")

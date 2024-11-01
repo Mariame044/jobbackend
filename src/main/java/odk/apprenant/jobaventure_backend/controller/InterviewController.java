@@ -2,10 +2,7 @@ package odk.apprenant.jobaventure_backend.controller;
 
 
 import odk.apprenant.jobaventure_backend.dtos.MetierDto;
-import odk.apprenant.jobaventure_backend.model.Interview;
-import odk.apprenant.jobaventure_backend.model.Metier;
-import odk.apprenant.jobaventure_backend.model.Trancheage;
-import odk.apprenant.jobaventure_backend.model.Video;
+import odk.apprenant.jobaventure_backend.model.*;
 import odk.apprenant.jobaventure_backend.repository.TrancheageRepository;
 import odk.apprenant.jobaventure_backend.service.InterviewService;
 import odk.apprenant.jobaventure_backend.service.MetierService;
@@ -196,6 +193,28 @@ public class InterviewController {
     public Interview regarderInterview(@PathVariable Long id) {
         statistiqueService.incrementerVueVideo(id);
         return interviewService.interviewregardees(id);
+    }
+
+    @PostMapping("/poser") // Endpoint pour poser une question
+    public ResponseEntity<String> poserQuestion(@RequestBody Question1 request) {
+        try {
+            // Vérification des paramètres requis
+            if (request.getContenu() == null || request.getContenu().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Le contenu de la question ne peut pas être vide.");
+            }
+            if (request.getInterviewId() == null) {
+                return ResponseEntity.badRequest().body("L'ID de l'interview est requis.");
+            }
+
+            // Appeler la méthode du service pour poser la question
+            interviewService.poserQuestion(request.getInterviewId(), request.getContenu());
+
+            // Retourner une réponse avec le code 201 Created
+            return ResponseEntity.status(HttpStatus.CREATED).body("Question posée avec succès.");
+        } catch (Exception e) {
+            // Gérer les exceptions et retourner une réponse d'erreur
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la pose de la question : " + e.getMessage());
+        }
     }
 
 }

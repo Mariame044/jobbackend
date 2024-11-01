@@ -1,15 +1,11 @@
 package odk.apprenant.jobaventure_backend.service;
 
 
-import odk.apprenant.jobaventure_backend.model.Admin;
-import odk.apprenant.jobaventure_backend.model.Enfant;
-import odk.apprenant.jobaventure_backend.model.Interview;
-import odk.apprenant.jobaventure_backend.model.Video;
-import odk.apprenant.jobaventure_backend.repository.AdminRepository;
-import odk.apprenant.jobaventure_backend.repository.EnfanrRepository;
-import odk.apprenant.jobaventure_backend.repository.InterviewRepository;
-import odk.apprenant.jobaventure_backend.repository.VideoRepository;
+import odk.apprenant.jobaventure_backend.model.*;
+import odk.apprenant.jobaventure_backend.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -17,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,7 +31,10 @@ public class InterviewService {
     @Autowired
     private StatistiqueService statistiqueService;
 
-
+    @Autowired
+    private JavaMailSender mailSender;
+    @Autowired
+    private Question1Repository question1Repository; // Injectez le repository
     // Méthode pour obtenir l'administrateur connecté
     private Admin getCurrentAdmin() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -172,6 +172,60 @@ public class InterviewService {
             return interview; // Retourne la vidéo pour visionnage
         } else {
             throw new RuntimeException("Interview non trouvée avec l'ID : " + id);
+        }
+    }
+
+
+    public void poserQuestion(Long interviewId, String contenu) {
+        Enfant enfant = getCurrentEnfant(); // Récupérer l'enfant connecté
+        String emailEnfant = enfant.getEmail(); // Supposons que vous ayez un getter pour l'email
+
+        // Créer une nouvelle question
+        Question1 question = new Question1();
+        question.setInterviewId(interviewId);
+        question.setEmailEnfant(emailEnfant);
+        question.setContenu(contenu);
+        question.setDate(new Date()); // Date actuelle
+
+        // Enregistrez la question dans la base de données
+        question1Repository.save(question);
+
+        // Appel de la méthode pour envoyer l'email au formateur
+        envoyerEmailAuFormateur(interviewId, contenu, emailEnfant);
+    }
+
+    private void envoyerEmailAuFormateur(Long interviewId, String contenu, String emailEnfant) {
+        // Récupérer l'interview pour obtenir le professionnel (formateur) associé
+        Interview interview = trouverInterviewParId(interviewId)
+                .orElseThrow(() -> new RuntimeException("Interview non trouvée avec l'ID : " + interviewId));
+
+        // Assurez-vous que l'interview a un professionnel associé
+        if (interview.getAdmin() == null) {
+            throw new RuntimeException("Aucun professionnel associé à cette interview.");
+        }
+
+        // Préparer le message
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(interview.getAdmin().getEmail()); // L'email du formateur
+        message.setSubject("Nouvelle question d'un enfant concernant l'interview");
+        message.setText("Bonjour,\n\nUn enfant a posé une nouvelle question concernant votre interview.\n\n" +
+                "Détails de la question : " + contenu + "\n" +
+                "Posée par l'enfant avec l'email : " + emailEnfant + "\n" +
+                "ID de l'interview : " + interviewId + "\n\n" +
+                "Merci de votre attention.");
+
+        // Log the email details for debugging
+        System.out.println("Envoi d'email à : " + interview.getAdmin().getEmail());
+        System.out.println("Sujet : " + message.getSubject());
+        System.out.println("Corps du message : " + message.getText());
+
+        // Envoyer l'email
+        try {
+            mailSender.send(message);
+            System.out.println("Email envoyé avec succès à " + interview.getAdmin().getEmail());
+        } catch (Exception e) {
+            // Gérer l'erreur d'envoi d'e-mail ici
+            System.err.println("Erreur lors de l'envoi de l'email : " + e.getMessage());
         }
     }
 
