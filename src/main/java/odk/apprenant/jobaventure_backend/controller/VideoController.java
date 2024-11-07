@@ -65,7 +65,7 @@ public class VideoController {
 
             // Créer une nouvelle instance de Video
             Video nouvelleVideo = new Video();
-            nouvelleVideo.setDuree(duree);
+            nouvelleVideo.setTitre(titre);
             nouvelleVideo.setDescription(description);
             nouvelleVideo.setTitre(titre);
             nouvelleVideo.setTrancheage(trancheage); // Lier la tranche d'âge à la vidéo

@@ -211,7 +211,7 @@ public class InterviewService {
         message.setText("Bonjour,\n\nUn enfant a posé une nouvelle question concernant votre interview.\n\n" +
                 "Détails de la question : " + contenu + "\n" +
                 "Posée par l'enfant avec l'email : " + emailEnfant + "\n" +
-                "ID de l'interview : " + interviewId + "\n\n" +
+                "ID de l'interview : " + interview.getDescription() + "\n\n" +
                 "Merci de votre attention.");
 
         // Log the email details for debugging

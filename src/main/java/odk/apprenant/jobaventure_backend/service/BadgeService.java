@@ -30,18 +30,7 @@ public class BadgeService {
         return badgeRepository.save(badge);
     }
 
-    // Mettre à jour un badge existant
-    public Badge updateBadge(Long id, Badge badgeDetails) {
-        Badge badge = badgeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Badge not found"));
 
-        badge.setNom(badgeDetails.getNom());
-        badge.setDescription(badgeDetails.getDescription());
-        badge.setAdmin(badgeDetails.getAdmin());
-        badge.setEnfant(badgeDetails.getEnfant());
-
-        return badgeRepository.save(badge);
-    }
 
     // Supprimer un badge
     public void deleteBadge(Long id) {

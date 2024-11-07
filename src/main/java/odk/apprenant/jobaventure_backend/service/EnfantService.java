@@ -2,11 +2,9 @@ package odk.apprenant.jobaventure_backend.service;
 
 
 import jakarta.transaction.Transactional;
-import odk.apprenant.jobaventure_backend.model.Enfant;
-import odk.apprenant.jobaventure_backend.model.Jeuderole;
-import odk.apprenant.jobaventure_backend.model.Parent;
-import odk.apprenant.jobaventure_backend.model.Role;
+import odk.apprenant.jobaventure_backend.model.*;
 import odk.apprenant.jobaventure_backend.repository.EnfanrRepository;
+import odk.apprenant.jobaventure_backend.repository.MetierRepository;
 import odk.apprenant.jobaventure_backend.repository.RoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -28,8 +26,11 @@ public class EnfantService {
     private RoleRepository roleRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private MetierRepository metierRepository;
 
-    private Enfant getCurrentEnfant() {
+
+    public Enfant getCurrentEnfant() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName(); // Supposons que l'email est utilisé comme principal
         return enfanrRepository.findByEmail(email)
@@ -64,7 +65,7 @@ public class EnfantService {
         Enfant enfantConnecte = getCurrentEnfant();
 
         // Initialisation des collections
-        enfantConnecte.getBadge().size(); // Chargez les badges
+
         enfantConnecte.getQuiz().size(); // Chargez les quiz
         enfantConnecte.getVideosRegardees().size(); // Chargez les vidéos
         enfantConnecte.getJeuderole().size(); // Chargez les jeux de rôle
@@ -76,7 +77,7 @@ public class EnfantService {
         System.out.println("Score de l'enfant: " + enfantConnecte.getScore());
         System.out.println("Tentatives restantes: " + enfantConnecte.getTentativesRestantes());
         System.out.println("Questions résolues: " + enfantConnecte.getQuestionsResolues());
-        System.out.println("Badges: " + enfantConnecte.getBadge());
+
         System.out.println("Jeux de rôle: " + enfantConnecte.getJeuderole());
         System.out.println("Vidéos: " + enfantConnecte.getVideosRegardees());
         System.out.println("Interviews: " + enfantConnecte.getInterviewregardees());
@@ -88,7 +89,7 @@ public class EnfantService {
         progression.put("score", enfantConnecte.getScore());
         progression.put("tentativesRestantes", enfantConnecte.getTentativesRestantes());
         progression.put("questionsResolues", enfantConnecte.getQuestionsResolues());
-        progression.put("badges", enfantConnecte.getBadge());
+
         progression.put("jeuxDeRole", enfantConnecte.getJeuderole());
         progression.put("videos", enfantConnecte.getVideosRegardees());
         progression.put("interviews", enfantConnecte.getInterviewregardees());
@@ -112,6 +113,7 @@ public class EnfantService {
 
         return jeuxDeRole;  // Retourner la liste des jeux de rôle
     }
+
 
 
 }

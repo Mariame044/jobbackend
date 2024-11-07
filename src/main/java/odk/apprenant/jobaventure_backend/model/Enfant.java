@@ -35,12 +35,13 @@ public class Enfant extends User {
 
     public void addBadge(Badge nomBadge) {
         // Check if badge already exists
-        if (this.badge.stream().noneMatch(badge -> badge.getNom().equals(nomBadge))) {
+        if (this.badge.stream().noneMatch(badge -> badge.getNom().equals(nomBadge.getNom()))) {
             Badge nouveauBadge = new Badge();
-            nouveauBadge.setNom(nomBadge + " - " + this.getNom()); // Associate the child's name with the badge
+            nouveauBadge.setNom(nomBadge.getNom() + " - " + this.getNom()); // Associate the child's name with the badge
             this.badge.add(nouveauBadge); // Add the new badge to the list
         }
     }
+
 
     @ManyToMany
     @JoinTable(

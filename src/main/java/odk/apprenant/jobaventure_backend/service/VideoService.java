@@ -124,7 +124,7 @@ class VideoServiceImpl implements VideoService {
         Optional<Video> videoExistante = videoRepository.findById(id);
         if (videoExistante.isPresent()) {
             Video v = videoExistante.get();
-            v.setDuree(video.getDuree());
+            v.setTitre(video.getTitre());
             v.setDescription(video.getDescription());
             v.setAdmin(video.getAdmin());
             v.setMetier(video.getMetier());

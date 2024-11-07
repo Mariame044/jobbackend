@@ -130,4 +130,6 @@ public class EnfantController {
         return "application/octet-stream"; // type par défaut pour les fichiers non reconnus
     }
 
+
+
 }

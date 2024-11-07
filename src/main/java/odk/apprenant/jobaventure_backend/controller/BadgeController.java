@@ -37,12 +37,6 @@ public class BadgeController {
         return ResponseEntity.ok(createdBadge);
     }
 
-    // Mettre à jour un badge existant
-    @PutMapping("/{id}")
-    public ResponseEntity<Badge> updateBadge(@PathVariable Long id, @RequestBody Badge badgeDetails) {
-        Badge updatedBadge = badgeService.updateBadge(id, badgeDetails);
-        return ResponseEntity.ok(updatedBadge);
-    }
 
     // Supprimer un badge
     @DeleteMapping("/{id}")

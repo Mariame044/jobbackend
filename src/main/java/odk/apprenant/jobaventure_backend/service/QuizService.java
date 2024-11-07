@@ -234,19 +234,6 @@ public class QuizService {
 
         double pourcentage = ((double) bonnesReponses / reponsesDonnees.size()) * 100;
 
-        // Attribuer un badge si le pourcentage est >= 80%, en évitant les doublons
-        if (pourcentage >= 80) {
-            // Vérifier si l'enfant a déjà le badge
-            boolean badgeExiste = enfant.getBadge().stream()
-                    .anyMatch(badge -> badge.getNom().equals("Badge d'excellence"));
-
-            // Si l'enfant n'a pas déjà le badge, on l'ajoute
-            if (!badgeExiste) {
-                Badge badge = new Badge();
-                badge.setNom("Badge d'excellence");  // Exemple de nom de badge
-                enfant.addBadge(badge); // Utiliser la méthode pour ajouter le badge
-            }
-        }
 
         // Mise à jour du score total de l'enfant
         enfant.setScore(enfant.getScore() + scoreTotal); // Ajouter le score du jeu au score total

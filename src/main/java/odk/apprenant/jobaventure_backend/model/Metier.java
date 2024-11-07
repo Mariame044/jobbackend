@@ -4,6 +4,7 @@ package odk.apprenant.jobaventure_backend.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ public class Metier {
     private Long id;
 
     private String nom;
+    @Size(max = 10000)
     private String description;
     private String imageUrl; // or use byte[] for storing image data directly
 

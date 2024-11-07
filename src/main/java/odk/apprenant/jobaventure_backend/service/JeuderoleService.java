@@ -210,11 +210,7 @@ public class JeuderoleService {
         double pourcentage = ((double) bonnesReponses / reponsesDonnees.size()) * 100;
 
         // Attribuer un badge si le pourcentage est >= 80%
-        if (pourcentage >= 80) {
-            Badge badge = new Badge();
-            badge.setNom("Badge d'excellence");  // Exemple de nom de badge
-            enfant.getBadge().add(badge);        // Ajouter le badge à l'enfant
-        }
+
 
         // Mise à jour du score total de l'enfant
         enfant.setScore(enfant.getScore() + scoreTotal); // Ajouter le score du jeu au score total

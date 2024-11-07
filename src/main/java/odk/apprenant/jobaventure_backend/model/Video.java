@@ -17,8 +17,8 @@ public class Video {
     private Long id;
 
     private String url;
-    private String duree;
     private String titre;
+   // private String titre;
     private String description;
     @ManyToOne
     @JsonIgnore // Ignore l'admin pour alléger la réponse JSON

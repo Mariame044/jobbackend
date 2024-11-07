@@ -24,8 +24,5 @@ public class Badge {
     @JoinColumn(name = "admin_id")
     private Admin admin; // Int
 
-    @ManyToMany(mappedBy = "badge")
-    private List<Enfant> enfant = new ArrayList<>();
-
 
 }
